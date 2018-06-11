@@ -27,6 +27,10 @@ function neutron_plugin_configure_service() {
     local PY_PLUGIN_PATH=$(python -c "import neutron_plugin_contrail; print neutron_plugin_contrail.__path__[0]")
     iniset $NEUTRON_CONF quotas quota_driver neutron_plugin_contrail.plugins.opencontrail.quota.driver.QuotaDriver
     iniset $NEUTRON_CONF DEFAULT api_extensions_path extensions:$PY_PLUGIN_PATH/extensions
+    NEUTRON_API_PASTE_FILE=$NEUTRON_CONF_DIR/api-paste.ini
+    iniset $NEUTRON_API_PASTE_FILE filter:user_token paste.filter_factory neutron_plugin_contrail.plugins.opencontrail.neutron_middleware:token_factory
+    arr=($(iniget_multiline $NEUTRON_API_PASTE_FILE composite:neutronapi_v2_0 keystone))
+    iniset $NEUTRON_API_PASTE_FILE composite:neutronapi_v2_0 keystone "$(echo ${arr[@]/neutronapiapp_v2_0/user_token}' neutronapiapp_v2_0')"
 }
 
 function neutron_plugin_setup_interface_driver() {
